@@ -1,0 +1,2 @@
+useDynLib(nectr)
+exportPattern("^[[:alpha:]]+")
