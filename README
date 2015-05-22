@@ -1,9 +1,24 @@
 nectr: Non-parametric Exploratory Clustering with TURN-RES.
 ===========================================================
 
-This is an R package including an implementation of the non-parametric clustering method authored by Foss, 2002. It was designed for industry analysts who need a fast way to explore a low dimension (p<10) dataset which does not impose a priori assumptions on the structure of the data.
+This is an R package intended for exploratory analysis of large N, small D datasets such as are typically used by industry analysts. It is based around an implementation of the non-parametric clustering method authored by Foss, 2002 (TURN-RES). The benefits are that no structure is assumed a priori and that the algorithm asymptotically scales linearithmically in N and D. Because we must perform a search on the tuning parameter, we can build a picture of how clusters merge, or are agglomerated as the resolution is decreased. This can then be used to inform a final more parsimonious clustering or dimensionality reducing technique.
 
-Performance notes:
-  + TURN-RES algorithm works fast and effectively. It may be slightly different to the paper mentioned above, due to a couple of details which have required some guesswork. Algorithm complexity is O(nlogn) dominated by 2*D calls to a mergesort implementation (D = dimension). The only notes I would add with regard to the quality of the clustering are that (a) Quantizing - the critical step required to reduce nearest neighbour search to an ordering problemThe approximations made by quantizing and considering only distances parallel to the axes do seem to throw up some odd boundaries. (b) Bridges between clusters of similar density can easily be formed through noise. Unlike DBSCAN, we cannot tune by requiring a greater number of points to form the bridge. Unforunately this means that finding a 'best' parameter whether algorithmically or by inspection is generally impossible; by the time one has captured the clusters desired, bridges are formed, and many of the clusters will coalesce. While the paper showed good results with TURN-CUT to algorithmically choose the paramater, I have found real world data to be less accomodating, hence this algorithm has been dropped from the implementation.
-  
-  + Due to the speed of the algorithm weighed up against these issues, I have found the algorithm helpful in quickly exploring relationships in the data, particularly with the agglomeration schedule and parallel coordinate plots, but not in the final clustering. For this reason, I've implemented a (semi) quick-and-dirty EM Gaussian Clustering algorithm to construct the final clustering. It is much faster than most EM algorithms currently available in R, and will still chew through O(10^6) datasets quickly. However, this is currently under review, as after more extensive testing has yielded instances where cluster probabilities drop to 0 and some covariance matrices -> Inf in norm. Therefore the package is on hold while this algorithm is redesigned.
+
+Notes on TURN-RES implementation:
+------------------------------------------
+  + TURN-RES algorithm works fast and effectively. It may be slightly different to the paper mentioned above, due to a couple of details which have required some guesswork. 
+  + Algorithm complexity is O(nlogn) dominated by 2*D calls to a mergesort implementation (D = dimension).
+  + The algorithm suffers more than many from the curse of dimensionality. Because search is effectively performed conditioned on a constant value of all dimensions bar the given one, the number of datapoints for a set of (D-1) given parameters falls exponentially in D. By way of example, I would not recommend using a dataset of size less than 500,000 for D greater than 5.
+  + Quantizing - the critical step required to reduce nearest neighbour search to an ordering problem - does induce unintuitive cluster boundaries at times, particularly for a low resolution quantization. 
+  + Bridges between clusters of similar density can easily be formed through noise. Unlike DBSCAN, we cannot tune by requiring a greater number of points to form the bridge. Therefore excluding toy datasets, a 'best' parameter cannot be found or even defined. Discovering some clusters will naturally be balanced by unintentionally merging others.  Similar issues arise when different variance scale clusters exist in the same dataset
+  + While the original paper showed good results with the dedicated TURN-CUT algorithm to chose the resolution parameter, I have found real world data to be less accomodating, and due to poor results have omitted this tuning stage from the implementation.
+  + All errors or omissions from (Foss, 2002) or indeed anywhere else remain my own.
+
+Other algorithms implemented:
+------------------------------------------
+TURN-RES is a useful algorithm for data exploration but is fairly useless as a dimensionality reduction method. The Gaussian Mixture Model is included in order to house a more effective model for this purpose in which we can use the results of TURN-RES as a prior.
+  + (TBA) Gaussian Mixture Model fitted with EM (MAP estimate used to avoid the collapsing variance issue).
+  + (TBA) VB Gaussian Mixture Model also implemented for comparison (which automatically tunes the number of components)
+
+Known Issues
+------------------------------------------
