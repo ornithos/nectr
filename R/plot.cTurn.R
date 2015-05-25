@@ -15,8 +15,8 @@ function(x, ...) {
         message("Plotting Parallel Co-ordinate plot - this may take some time...")
         
         #Scale down large datasets
-        if(x$n > 5000) {
-            scale <- ceiling(x$n/5000)
+        if(x$n > 2000) {
+            scale <- ceiling(x$n/2000)
             cls.names <- as.numeric(as.character(x$table$res))
             for(i in 1:nrow(x$table)) {
                 j <- cls.names[i]
@@ -30,9 +30,8 @@ function(x, ...) {
                 }
             }
         } else {
-            rws <- !is.na(x$cluster)
-            plot.data <- get(nm, envir = .GlobalEnv)[rws, ]
-            plot.data <- cbind(plot.data, cls = x$cluster[rws])    
+            plot.data <- .nectr.getData(x)
+            plot.data <- cbind(plot.data, cls = x$cluster[rws]) 
         }
         
         #Add IDs and put into "molten" state (see reshape2)
@@ -40,7 +39,7 @@ function(x, ...) {
         data <- melt(cbind(ID=1:nrow(plot.data), plot.data), id.vars = c("ID","cls"), variable.name = "dimensions")
         
         #Perform plot
-        plot.alpha <- 170/pmax(170,pmin(x$n,5000))
+        plot.alpha <- 170/pmax(170,pmin(x$n,2000))
         p <- ggplot(data, aes(x = dimensions, y = value, group = ID, colour = factor(cls))) + geom_path(alpha = plot.alpha) 
         p <- p + facet_wrap( ~ cls) + theme(axis.text.x=element_text(angle = -90, hjust = 0.5, vjust = 0.5))
         print(p + ggtitle(title) + theme(legend.position="none"))

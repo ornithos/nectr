@@ -11,14 +11,14 @@
 clsMRes(data, r.start = NA, r.max = Inf, keep = FALSE, ...)
 }
 \arguments{
-  \item{data}{\emph{required} The data to be clustered. Each column must be a dimension; no labels are permitted.
+  \item{data}{\emph{Required}. The data to be clustered. Each column must be a dimension; no labels are permitted.
 				\code{data} must be of class \code{data.frame}.}
-  \item{r.start}{Optional parameter for user to specify the beginning of the resolution step sequence.}
-  \item{r.max}{Optional parameter for user to specify the largest value of the resolution step sequence.}
-  \item{keep}{Optional parameter - keep the clustering vector associated with each clsTurnRes iteration.
-				By default the algorithm does not keep the clustering vector found on each iteration, 
-				since vectors and iterations may be large.}
-  \item{...}{Optional - Additional arguments to be passed to clsTurnRes}
+  \item{keep}{\emph{Optional}. Whether to keep the clustering vector associated with each clsTurnRes iteration.
+				By default the algorithm keeps the clustering vector found on each iteration, 
+				but one may wish to discard them if the vectors are large.}
+  \item{r.start}{\emph{Optional}. For user specified resolution step sequence. This specifies the first number in the sequence.}
+  \item{r.max}{\emph{Optional}. For user specified resolution step sequence. This specifies the last number in the sequence - ie the search is terminated if the parameter value is not less than r.max.}
+  \item{...}{\emph{Optional} (additional arguments to be passed to clsTurnRes)}
 }
 \details{Automatic function - should be no need for parameter choice if uncertain. The first goal is to
 	find an appropriate sequence of resolutions to run through the clsTurnRes algorithm. A 	starting 
@@ -34,13 +34,12 @@ clsMRes(data, r.start = NA, r.max = Inf, keep = FALSE, ...)
 
 \note{
 	In order to avoid copying the dataset to each clsMR object, instead the name is saved as item \code{$dataset.name}.
-	The data will then be retrieved in function calls via \code{get(dataset.name, env = .GlobalEnv)}, which
-	means that the user must ensure that the dataset variable name is not changed. This is obviously fraught 
-	with danger, but given the package is to be used with large datasets, it is also inadvisable to make a 
-	copy for every object.
+	The data will then be retrieved in function calls via \code{get(dataset.name, env = .GlobalEnv)}, \emph{which
+	means that the user must ensure that the dataset variable name is not changed}. There are obvious problems with this approach
+	but the alternative is to waste memory copying potentially large datasets every time the function is called.
 }
 \author{
-	Alex Bird, \email{alex.bird@boots.co.uk}
+	Alex Bird, \email{alex.bird.14@ucl.ac.uk}
 }
 
 

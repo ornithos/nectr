@@ -1,97 +1,145 @@
-   # dyn.load("C:/Users/pc/Documents/pkg_dev/nectr/src/rowWhichMaxC.dll")
-getEMGPs <- function(data, centers, cls.prob = NULL, move.restrict = NA, 
-                     eps.target = 0.1, trunc = 0.5, max.iter = 100, silent = FALSE) {
+# dyn.load("C:/Users/pc/Documents/pkg_dev/nectr/src/rowWhichMaxC.dll")
+
+
+
+.nectr.fitGMM <- function(params, hyperparams, eps.stop = 0.01, trunc = 0.5, max.iter = 100, silent = FALSE) {
     
     #Set up
     #-----------
-    require(mvtnorm)
-    m = nrow(data)
-    n = ncol(data)
-    mu <- centers
-    if(!(is.list(mu) & !is.data.frame(mu))) stop("Centers must be a list of vectors.")
-    if(!identical(unname(mu), unique(mu))) stop("Centers have repeated values. They must be distinct")
-    k = length(mu)
-    S <- list(); for(i in 1:k) S[[i]] <- diag(n)
-    w <- matrix(0, m, k)
-    phi <- vector()
-    if(is.null(cls.prob)) {
-        for(i in 1:k) phi[i] <- 1/k
-    } else {
-        if(is.numeric(cls.prob) & length(cls.prob) == k) {
-            phi <- cls.prob/sum(cls.prob)
-        } else {
-            stop("cls.prob must be vector with same dimension as centers")
-        }
-    }
-    if(!is.na(move.restrict) & !(is.numeric(move.restrict) & length(move.restrict)==1))
-        stop("move.restrict must be a scalar value")
-    llh.history <- vector(mode="numeric", length=max.iter+1)
-    llh.history[1] <- -Inf
+    .nectr.checkParams(params)
+    data <- .nectr.getData(params$dsn)
     if(is.data.frame(data)) data <- as.matrix(data)
     
+    # ..........................................................................
+    # Calculate the density of Gaussian with mean and cov of each datapoint
+    # in x. Credit belongs entirely to mvtnorm package. Since it's for internal
+    # use, there is no need of the error catching in dmvnorm.
+    # 
+    # ** Shamelessly stolen from code by Friedrich Leisch and Fabian Scheipl **
+    .internal.dmvnorm <- function(x, mean, cov, log_units = FALSE) {
+        dec <- tryCatch(chol(cov), error = function(e) e)
+        if (inherits(dec, "error")) {
+            warning("Covariance matrix is singular or badly scaled")
+            browser()
+            logdensity <- rep.int(-Inf, x)
+        }
+        else {
+            tmp <- backsolve(dec, t(x) - mean, transpose = TRUE)
+            rss <- colSums(tmp^2)
+            logdensity <- -sum(log(diag(dec))) - 0.5 * ncol(x) * log(2 * pi) - 0.5 * rss
+        }
+        if(log_units) return(logdensity)
+        return(exp(logdensity))
+    }
+    
+    # ..........................................................................
+    
+    # Trace - to make llh more readable
+    Tr <- function(x) sum(diag(x))
+    
+    # Function to Calc (Log) Likelihood
+    calc.llh <- function(par, hyper, pri, r, pi, mu, S) {
+        llh <- numeric(4)
+        for(cK in 1:par$k) {
+            llh[1] <- llh[1] + sum(r[ ,cK]*.internal.dmvnorm(data, mu[cK,], S[[cK]], log_units=TRUE))
+            llh[2] <- llh[2] + (sum(r[ ,cK]) + hyper$alpha[cK] - 1)*log(pi[cK])
+            llh[3] <- llh[3] + .internal.dmvnorm(matrix(mu[cK,],ncol=par$d), pri$mu[cK,], S[[cK]] /
+                                               hyper$beta[cK], log_units=TRUE)
+            llh[4] <- llh[4] - 0.5*(hyper$nu[cK]+par$d+1)*log(det(S[[cK]]))
+            llh[4] <- llh[4] - 0.5*hyper$nu[cK]*Tr(pri$S[[cK]]*solve(S[[cK]]))
+        }
+        return(c(sum(llh),llh))
+    }
+    # ..........................................................................
+    
+    
+    params$r <- with(params, matrix(0, n, k))
+    if(is.data.frame(params$mu)) within(params, mu <-  as.matrix(mu))
+    
+    gauss.ldensity <- with(params, matrix(0, n, k))
+    Nk <- numeric(params$k)
+    prior <- params
+    llh.history <- matrix(0,max.iter+1,5)
+    llh.history[1,] <- rep(-Inf,5)
+    eps <- 0
+    
+	# data = n * d
+	# number of clusters = k;  score of each datapoint in each cluster = r.
+	# 
     #EM Loop
-    for(cnt in 1:max.iter) {
-        #E: Set-up
-        mu <- lapply(mu, as.matrix)
-        
-        #E: Assign un-normalised wj's
-        for(j in 1:k) {
-            w[ ,j] <- dmvnorm(data, mu[[j]], S[[j]])*phi[j]
-        }
-        #E: Normalise wj's
-        w.maxs <- .Call("rowWhichMaxC", w)       #[,1] = rowMax, [,2] = which.max
-        zeros <- w.maxs[, 1] < trunc/m
-        w <- w/rowSums(w)
-        for(i in 1:k) w[zeros,i] <- 0
-        
-        #Convergence
-        llh <- 0
-        for(j in 1:k) {
-            llh <- llh + sum(log(dmvnorm(data[w.maxs[ ,2] == j, ], mu[[j]], S[[j]])))
-        }
-        eps <- llh - llh.history[cnt]
-        if(!silent) cat("EM Iteration ", cnt,": ", as.numeric(eps),"\n")
-        llh.history[cnt+1] <- llh
-        if(abs(eps) < eps.target) break
+    out <- with(params, {
+        for(cI in 1:max.iter) {
+            
+        #E: Assign r_nk's
+        #-----------------
+            for(cK in 1:k) {
+                gauss.ldensity[ ,cK] <- .internal.dmvnorm(data, mu[cK,], S[[cK]], log_units=TRUE)
+                r[ ,cK] <- gauss.ldensity[ ,cK] + log(pi[cK])
+            }
+            r <- exp(r)/rowSums(exp(r))
+            Nk <- colSums(r)
+
+            # Test for Convergence
+            llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
+            eps <- llh[1] - llh.history[cI,1]
+            if(!silent) cat("EM Iteration ", cI,": log likelihood change: ", as.numeric(eps),"\n")
+            llh.history[cI+1,] <- llh
+            if(abs(eps) < eps.stop) break
         
         #M-step
         #--------------
-        
-        sum.w <- colSums(w)
-        phi <- sum.w/m
-        
-        for(j in 1:k) {
-            data.centered <- sqrt(w[,j]) * (data - matrix(mu[[j]], m, n, byrow=T))
-            sigma.sum <- t(data.centered) %*% data.centered
-            S[[j]] <- sigma.sum/sum.w[j]
-        }
-        
-        #Update mu, but impose restrictions (if any)
-        for(i in 1:k) {
-            move <- colSums(w[ ,i] * data)/sum.w[i] - mu[[i]]
-            if(is.na(move.restrict)) {
-                mu[[i]] <- mu[[i]] + move
-            } else {
-                len <- sqrt(sum(move^2))
-                mu[[i]] <- mu[[i]] + move*pmin(move.restrict,len)/len
+            # MIXING PROBABILITIES, PI
+            if(all(hyperparams$infinities$alpha == FALSE)) {
+                for(cK in 1:k) pi[cK] <- hyperparams$alpha[cK] + Nk[cK] - 1
+                pi <- pi / sum(pi)
             }
+        
+        new.llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
+        cat("M pi: ", cI,": log likelihood change: ", paste(round(new.llh - llh,1),collapse=","),"\n")
+        llh <- new.llh
+        
+            # COMPONENT MEANS, MU
+            if(all(hyperparams$infinities$beta == FALSE)) {
+                for(cK in 1:k) mu[cK, ] <- colSums(r[ ,cK]*data) + hyperparams$beta[cK]*prior$mu[cK, ]
+                mu <- mu / matrix(Nk + hyperparams$beta, k, d)
+            }
+            
+        new.llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
+        cat("M mu: ", cI,": log likelihood change: ", paste(round(new.llh - llh,1),collapse=","),"\n")
+        llh <- new.llh
+            # COMPONENT COVARIANCE, SIGMA
+            if(all(hyperparams$infinities$nu == FALSE & hyperparams$infinities$beta == FALSE)) {
+                for(cK in 1:k) {
+                    cov.tmp <- t(Reduce("-", list(t(data), mu[cK,])))
+                    prior.outer <- outer(mu[cK,] - prior$mu[cK,], mu[cK,] - prior$mu[cK,])
+                    S[[cK]] <- t(r[ ,cK]*cov.tmp) %*% cov.tmp
+                    S[[cK]] <- S[[cK]] + hyperparams$beta[cK]*prior.outer + hyperparams$nu[cK]*prior$S[[cK]]
+                    S[[cK]] <- S[[cK]] / (Nk[cK] + hyperparams$nu[cK] + d + 2)
+                }
+            }
+
+        new.llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
+        cat("M sigma: ", cI,": log likelihood change: ", paste(round(new.llh - llh,1),collapse=","),"\n")
+        llh <- new.llh
+            
         }
-    }
-    
-    if(abs(eps) >= eps.target) warning("EM Algorithm did not converge within max.iter")
-    for(i in 1:k) dimnames(mu[[i]]) <- NULL
-    for(i in 1:k) dimnames(S[[i]]) <- NULL
-    out <- list()
-    out$llh.history <- llh.history[2:(cnt+1)]
-    out$phi <- phi
-    out$mu <- mu
-    out$sigma <- S
+        retval <- list(pi=pi, mu=mu, S=S, k=k, d=d, n=n, dsn=dsn)
+        retval$cluster <- .Call("rowWhichMaxC", r)[ ,2]    #[,1] = rowMax, [,2] = which.max
+        retval$llh_ascent <- llh.history[2:(cI+1),]
+        retval$monotone <- all(order(retval$llh_ascent) == 1:cI)
+        retval$iter <- cI
+        retval
+    })
+    if(abs(out$llh_ascent[out$iter] - out$llh_ascent[out$iter-1]) >= eps.stop) 
+        warning("EM Algorithm did not converge within max.iter")
+    if(!out$monotone) warning("Log Likelihood ascension was not monotone.")
+    class(out) <- ".nectr.GMM"
     return(out)
 }
 
 
 
-getEMClusters <- function(data, mu = NA, sigma = NA, phi = NA, params = NA) {
+scoreGMM <- function(data, mu = NA, sigma = NA, phi = NA, params = NA) {
     
     #Set up
     #-----------
@@ -166,12 +214,12 @@ formaliseClusters <- function(x, clusters = NULL, data = NULL, ...) {
     }
     
     if(is.null(Call[["max.iter"]])) max.iter <- 100 else max.iter <- Call[["max.iter"]]
-    if(is.null(Call[["eps.target"]])) eps.target <- 0.1 else max.iter <- Call[["eps.target"]]
+    if(is.null(Call[["eps.stop"]])) eps.stop <- 0.1 else max.iter <- Call[["eps.stop"]]
     message("Performing EM ascent on dataset - this may take some time.\nCurrent params are: ",
-            "max iterations:", max.iter, ", convergence target: ", eps.target)
-    params <- getEMGPs(data, centr, ...)
+            "max iterations:", max.iter, ", convergence target: ", eps.stop)
+    params <- fitGMM(data, centr, ...)
     message("Parameters estimated. Scoring all data...")
-    cls <- getEMClusters(data, params = params)
+    cls <- scoreGMM(data, params = params)
     params$cluster <- cls$cluster
     params$cluster.prob <- cls$prob
     return(params)

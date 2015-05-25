@@ -1,5 +1,5 @@
 clsMRes <-
-function(data, keep, r.start = NA, r.max = Inf, ...) {
+function(data, keep = TRUE, r.start = NA, r.max = Inf, ...) {
     
     mc <- match.call()
     dataset.name <- toString(as.list(mc)$data)

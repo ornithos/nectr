@@ -1,7 +1,7 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9) (preloaded format=pdflatex 2014.10.1)  23 MAY 2015 17:09
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9) (preloaded format=pdflatex 2014.10.1)  25 MAY 2015 19:22
 entering extended mode
-**C:/Users/pc/Documents/Dev/nectr/Latex/GMM*Derivation.tex
-("C:/Users/pc/Documents/Dev/nectr/Latex/GMM Derivation.tex"
+**C:/Users/pc/Documents/Dev/nectr/Build/nectr/tex/GMM*Derivation.tex
+("C:/Users/pc/Documents/Dev/nectr/Build/nectr/tex/GMM Derivation.tex"
 LaTeX2e <2011/06/27>
 Babel <v3.8m> and hyphenation patterns for english, afrikaans, ancientgreek, ar
 abic, armenian, assamese, basque, bengali, bokmal, bulgarian, catalan, coptic, 
@@ -704,7 +704,7 @@ Package: filemod-expmin 2011/09/19 v1.2 Get and compare file modification times
 \f@ncyO@erf=\skip129
 \f@ncyO@olf=\skip130
 \f@ncyO@orf=\skip131
-) ("C:\Users\pc\Documents\Dev\nectr\Latex\GMM Derivation.aux")
+) ("C:\Users\pc\Documents\Dev\nectr\Build\nectr\tex\GMM Derivation.aux")
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 101.
 LaTeX Font Info:    ... okay on input line 101.
 LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 101.
@@ -835,7 +835,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 166--168
  []
 
 
-Overfull \hbox (16.42943pt too wide) in paragraph at lines 176--176
+Overfull \hbox (27.76198pt too wide) in paragraph at lines 176--176
 [] 
  []
 
@@ -855,38 +855,38 @@ LaTeX Font Info:    Try loading font information for OT1+pcr on input line 189.
 ("C:\Users\pc\Documents\Other Software\MikTex\tex\latex\psnfss\ot1pcr.fd"
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
-[4] ("C:\Users\pc\Documents\Dev\nectr\Latex\GMM Derivation.aux") ) 
+[4] ("C:\Users\pc\Documents\Dev\nectr\Build\nectr\tex\GMM Derivation.aux") ) 
 Here is how much of TeX's memory you used:
  14615 strings out of 493921
- 256038 string characters out of 3140860
+ 256108 string characters out of 3140860
  362204 words of memory out of 3000000
  17646 multiletter control sequences out of 15000+200000
  21687 words of font info for 63 fonts, out of 3000000 for 9000
  841 hyphenation exceptions out of 8191
- 40i,18n,72p,10499b,291s stack positions out of 5000i,500n,10000p,200000b,50000s
-{C:/Users/pc/
-Documents/Other Software/MikTex/fonts/enc/dvips/fontname/8r.enc}<C:/Users/pc/Do
-cuments/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Use
-rs/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmex10.pfb
-><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cm
-mi10.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfon
-ts/cm/cmmi6.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public
-/amsfonts/cm/cmmi8.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1
-/public/amsfonts/cm/cmmib10.pfb><C:/Users/pc/Documents/Other Software/MikTex/fo
-nts/type1/public/amsfonts/cmextra/cmmib8.pfb><C:/Users/pc/Documents/Other Softw
-are/MikTex/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/pc/Documents/Othe
-r Software/MikTex/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/pc/Document
-s/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Users/pc/Do
-cuments/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Use
-rs/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmsy8.pfb>
-<C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/symbol
-s/msbm10.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/urw/couri
-er/ucrr8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/urw/pala
-tino/uplb8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/urw/pa
-latino/uplr8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/urw/
-palatino/uplr8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/ur
-w/palatino/uplri8a.pfb>
-Output written on "GMM Derivation.pdf" (4 pages, 215628 bytes).
+ 40i,18n,72p,10509b,291s stack positions out of 5000i,500n,10000p,200000b,50000s
+{C:
+/Users/pc/Documents/Other Software/MikTex/fonts/enc/dvips/fontname/8r.enc}<C:/U
+sers/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmbx10.p
+fb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/
+cmex10.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsf
+onts/cm/cmmi10.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/pub
+lic/amsfonts/cm/cmmi6.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/ty
+pe1/public/amsfonts/cm/cmmi8.pfb><C:/Users/pc/Documents/Other Software/MikTex/f
+onts/type1/public/amsfonts/cm/cmmib10.pfb><C:/Users/pc/Documents/Other Software
+/MikTex/fonts/type1/public/amsfonts/cmextra/cmmib8.pfb><C:/Users/pc/Documents/O
+ther Software/MikTex/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/pc/Docu
+ments/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/p
+c/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/U
+sers/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/cmsy10.p
+fb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfonts/cm/
+cmsy8.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1/public/amsfo
+nts/symbols/msbm10.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type1
+/urw/courier/ucrr8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/type
+1/urw/palatino/uplb8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/ty
+pe1/urw/palatino/uplr8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/fonts/
+type1/urw/palatino/uplr8a.pfb><C:/Users/pc/Documents/Other Software/MikTex/font
+s/type1/urw/palatino/uplri8a.pfb>
+Output written on "GMM Derivation.pdf" (4 pages, 215480 bytes).
 PDF statistics:
  88 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
