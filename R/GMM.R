@@ -2,7 +2,7 @@
 
 
 
-.nectr.fitGMM <- function(params, hyperparams, eps.stop = 0.01, trunc = 0.5, max.iter = 100, silent = FALSE) {
+.nectr.fitGMM <- function(params, hyperparams, eps.stop = 0.01, max.iter = 100, silent = FALSE) {
     
     #Set up
     #-----------
@@ -19,7 +19,7 @@
     .internal.dmvnorm <- function(x, mean, cov, log_units = FALSE) {
         dec <- tryCatch(chol(cov), error = function(e) e)
         if (inherits(dec, "error")) {
-            warning("Covariance matrix is singular or badly scaled")
+            warning("Covariance matrix is not positive definite")
             browser()
             logdensity <- rep.int(-Inf, x)
         }
@@ -38,15 +38,24 @@
     Tr <- function(x) sum(diag(x))
     
     # Function to Calc (Log) Likelihood
-    calc.llh <- function(par, hyper, pri, r, pi, mu, S) {
+    calc.llh <- function(par, hyper, pri, pi, mu, S) {
         llh <- numeric(4)
+        
+        # DATA TERMS: due to the sum inside log, all densities must be precalcd to take
+        # advantage of linear algebra routines. Waste of memory, but needs -> C to do better.
+        data_term_store <- matrix(0, par$n, par$k)
         for(cK in 1:par$k) {
-            llh[1] <- llh[1] + sum(r[ ,cK]*.internal.dmvnorm(data, mu[cK,], S[[cK]], log_units=TRUE))
-            llh[2] <- llh[2] + (sum(r[ ,cK]) + hyper$alpha[cK] - 1)*log(pi[cK])
+            data_term_store[,cK] <- .internal.dmvnorm(data, mu[cK,], S[[cK]], log_units=FALSE) * pi[cK]
+        }
+        llh[1] <- sum(log(rowSums(data_term_store)))
+
+        # PRIOR TERMS: these are a simple sum and so can be looped over in the usual way
+        for(cK in 1:par$k) {
+            llh[2] <- llh[2] + (hyper$alpha[cK] - 1)*log(pi[cK])
             llh[3] <- llh[3] + .internal.dmvnorm(matrix(mu[cK,],ncol=par$d), pri$mu[cK,], S[[cK]] /
                                                hyper$beta[cK], log_units=TRUE)
             llh[4] <- llh[4] - 0.5*(hyper$nu[cK]+par$d+1)*log(det(S[[cK]]))
-            llh[4] <- llh[4] - 0.5*hyper$nu[cK]*Tr(pri$S[[cK]]*solve(S[[cK]]))
+            llh[4] <- llh[4] - 0.5*hyper$nu[cK]*Tr(pri$S[[cK]] %*% solve(S[[cK]]))
         }
         return(c(sum(llh),llh))
     }
@@ -68,8 +77,7 @@
 	# 
     #EM Loop
     out <- with(params, {
-        for(cI in 1:max.iter) {
-            
+        for(cI in 1:max.iter) {    
         #E: Assign r_nk's
         #-----------------
             for(cK in 1:k) {
@@ -80,7 +88,7 @@
             Nk <- colSums(r)
 
             # Test for Convergence
-            llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
+            llh <- calc.llh(params, hyperparams, prior, pi, mu, S)
             eps <- llh[1] - llh.history[cI,1]
             if(!silent) cat("EM Iteration ", cI,": log likelihood change: ", as.numeric(eps),"\n")
             llh.history[cI+1,] <- llh
@@ -94,19 +102,12 @@
                 pi <- pi / sum(pi)
             }
         
-        new.llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
-        cat("M pi: ", cI,": log likelihood change: ", paste(round(new.llh - llh,1),collapse=","),"\n")
-        llh <- new.llh
-        
             # COMPONENT MEANS, MU
             if(all(hyperparams$infinities$beta == FALSE)) {
                 for(cK in 1:k) mu[cK, ] <- colSums(r[ ,cK]*data) + hyperparams$beta[cK]*prior$mu[cK, ]
                 mu <- mu / matrix(Nk + hyperparams$beta, k, d)
             }
             
-        new.llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
-        cat("M mu: ", cI,": log likelihood change: ", paste(round(new.llh - llh,1),collapse=","),"\n")
-        llh <- new.llh
             # COMPONENT COVARIANCE, SIGMA
             if(all(hyperparams$infinities$nu == FALSE & hyperparams$infinities$beta == FALSE)) {
                 for(cK in 1:k) {
@@ -117,16 +118,12 @@
                     S[[cK]] <- S[[cK]] / (Nk[cK] + hyperparams$nu[cK] + d + 2)
                 }
             }
-
-        new.llh <- calc.llh(params, hyperparams, prior, r, pi, mu, S)
-        cat("M sigma: ", cI,": log likelihood change: ", paste(round(new.llh - llh,1),collapse=","),"\n")
-        llh <- new.llh
             
         }
         retval <- list(pi=pi, mu=mu, S=S, k=k, d=d, n=n, dsn=dsn)
         retval$cluster <- .Call("rowWhichMaxC", r)[ ,2]    #[,1] = rowMax, [,2] = which.max
-        retval$llh_ascent <- llh.history[2:(cI+1),]
-        retval$monotone <- all(order(retval$llh_ascent) == 1:cI)
+        retval$llh_ascent <- llh.history[2:(cI+1), 1]
+        retval$monotone <- !is.unsorted(retval$llh_ascent)
         retval$iter <- cI
         retval
     })

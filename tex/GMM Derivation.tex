@@ -101,13 +101,14 @@
 \begin{document}
 \section*{Non-parametric Exploratory Clustering using TURN-RES (nectr)}
 \section*{\today}
+\hspace*{\fill}Alex Bird\hspace*{\fill}
 \vspace*{20pt}
 
 \subsection{MAP Estimation of Gaussian Mixture Model}
 This document is not intended to be a tutorial on deriving the update equations for a Gaussian Mixture Model (GMM). However, we aim to be transparent with regard to the content of the package. While the algorithm for TURN-RES is available in (Foss, 2002 \cite{F02}), fitting the GMM is not done using the standard Maximum Likelihood update equations, but using a MAP estimate. The Bayesian machinery available in MAP estimates is particularly useful for this package, since the clusters discovered using TURN-RES can be used as priors in a sort of Empirical Bayes approach. As one might suspect, the MAP update equations are very similar to the ML equations, but the derivation may be helpful to some. Those not familiar with fitting latent variable models are invited to read Bishop \cite{B06}, chapter 9, while the free energy formulation can be found in Neal \& Hinton, 1998 \cite{N98}.
 
 \subsubsection{The Free Energy for MAP estimation}
-Free energy is defined below for observed $x$ and latent $z$ as a lower bound on Maximum Likelihood:
+Free energy is defined below for observed $x$ and latent $z$ as a lower bound on the (log) likelihood:
 $$ \mathcal{F}(q, \theta) := \int q(z) \log \frac{p(x, z|\theta)}{q(z)}dz $$
 As a lower bound on MAP, up to a constant of proportionality:
 $$ \mathcal{F}_{\text{\tiny{MAP}}}(q, \theta) := \int q(z) \log \frac{p(x, z|\theta) p(\theta)}{q(z)}dz $$
@@ -189,6 +190,14 @@ Since both $\beta_k$ and $\nu_k$ are `pseudo counts', or a measure of our belief
 This leaves only 2 types of free paramaters for the user to choose, $a$ (\texttt{alpha} in the \texttt{fitGMM} documentation), and $\beta_k$. Both reflect the strength of belief in our prior, that is the clusters found during the TURN-RES phase. And we can even choose $\beta_k \propto \alpha_k$, the empirical proportions from TURN-RES with an appropriate multiplier $b$, (\texttt{beta} in the \texttt{fitGMM} documentation). For ease, the user is only introduced to these \emph{strength} parameters, as a prior belief in the mixing proportions and a prior belief in the cluster moments respectively, but we leave access to the underlying parameters for the more adventurous users.
 \vspace{20pt}
 
+\subsubsection{Likelihood calculation}
+\begin{align*}
+p(x|\pi, \mu, \Sigma)p(\pi, \mu, \Sigma) &= \left( \prod_{n=1}^N \sum_z \prod_{k=1}^K \pi_k^{z_k} \mathcal{N}(x_n|\mu_k, \Sigma_k)^{z_{nk}}\right) \times\\
+&\qquad \left(\prod_{k=1}^K \mathcal{N}(\mu_k|m_k, \beta_k^{-1} \Sigma_k)\text{InvWish}(\Sigma_k|\Psi_k, \nu_k)\right)  \text{Dir}(\bs{\alpha})\\[15pt]
+\ell_{\text{\tiny{MAP}}}(\pi, \mu, \Sigma) & = \sum_{n=1}^N \log\left(\sum_z \pi_k \mathcal{N}(x_n|\mu_k, \Sigma_k)\right) + \left( \sum_{k=1}^K \log\mathcal{N}(\mu_k|m_k, \beta_k^{-1} \Sigma_k)\right.\\
+& \qquad \left. -\frac{\nu_k + d+ 1}{2}\log|\Sigma_k| - \frac{\nu_k}{2}\Trace\left(\Psi_k\Sigma_k^{-1}\right) + (\alpha_k-1)\log\pi_k  \right) + \text{const}
+\end{align*}
+An option has been added to skip evaluations, since in general the extra iterations of EM performed before convergence is diagnosed are computationally less expensive than the likelihood evaluations that have been omitted.
 \begin{thebibliography}{1}
 \bibitem{F02}
 {A. Foss, O.R. Zaiane,
