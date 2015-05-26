@@ -10,7 +10,7 @@ as.cTurn <- function(x, ...) {
         
         y <- list()
         y$k <- length(nodes)
-        y$dataset <- x$dataset.name
+        y$dataset <- x$dataset
         
         #Get column/resolution of each cluster specified
         cumcls <- cumsum(x$turndata[ ,"k"])

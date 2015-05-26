@@ -161,12 +161,13 @@ function(data, r, summarise = F, min.size = "Auto", base.cls = "None", phi = 0.8
     if(n.cls > 0) { 
         k <- length(cls.lkp) 
         cls.freq <- as.data.frame(table(res))
+        colnames(cls.freq) <- c("cls", "freq")
         #Calculate cluster means
         cls.means <- .Call("clsMeans", as.matrix(get(dataset.name, envir = parent.frame())), 
                            res, as.integer(cls.freq[,1]))
     } else { 
         k <- 0
-        cls.freq <- data.frame(Var1 = 0, Freq = 0)
+        cls.freq <- data.frame(cls = 0, freq = 0)
         cls.means <- matrix(NA,1,1)
     }    
     

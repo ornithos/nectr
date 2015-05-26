@@ -73,7 +73,7 @@ function(data, keep = TRUE, r.start = NA, r.max = Inf, ...) {
     nodes.max <- 2000
     nodes.curr <- 1
     nodes <- matrix(NA, nrow = nodes.max, ncol = 4)
-    colnames(nodes) <- c("r","n","parent","branches")
+    colnames(nodes) <- c("r","n","child","branches")
     
     turn.curr <- 1
     turn <- matrix(NA, nrow = 250, ncol = 7)
@@ -118,10 +118,10 @@ function(data, keep = TRUE, r.start = NA, r.max = Inf, ...) {
                 movement <- table(prev.cls, curr$cluster)
                 cls.into <- apply(movement, 1, which.max)
                 
-                e <- try(nodes[prev.nodes, "parent"] <- cls.into + nodes.curr-1, silent = TRUE)
+                e <- try(nodes[prev.nodes, "child"] <- cls.into + nodes.curr-1, silent = TRUE)
                 if(inherits(e, "try-error")) browser()
                 
-                branch.lkp <- as.data.frame(table(nodes[prev.nodes, "parent"]))
+                branch.lkp <- as.data.frame(table(nodes[prev.nodes, "child"]))
                 branch.new <- branch.lkp[match(new.node.ids, branch.lkp[ ,1]), 2]
                 nodes[new.node.ids, "branches"] <- ifelse(is.na(branch.new),0,branch.new)
                 prev.curr <- nodes.curr
@@ -184,7 +184,7 @@ function(data, keep = TRUE, r.start = NA, r.max = Inf, ...) {
         if(i > 1) {
             nx.nodes <- which(nodes[ ,"r"] == rs[i-1])
             nx.order <- order(nodes[nx.nodes, "position"])
-            above.order <- match(nodes[nodes.sel, "parent"], nx.nodes[nx.order])
+            above.order <- match(nodes[nodes.sel, "child"], nx.nodes[nx.order])
             above.order <- ifelse(is.na(above.order), length(nx.nodes) + 1, above.order)
         } else {
             above.order <- 1:length(nodes.sel)
@@ -215,7 +215,7 @@ function(data, keep = TRUE, r.start = NA, r.max = Inf, ...) {
     out <- list()
     out$agglom <- nodes
     out$turndata <- turn
-    out$dataset.name <- dataset.name
+    out$dataset <- dataset.name
     out$means <- all.means
     out$res.step <- ascent.seq[2] - ascent.seq[1]
     out$n <- orig.n

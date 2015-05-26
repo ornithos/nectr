@@ -24,9 +24,9 @@ function(x, ...) {
                 rws <- which(x$cluster == j)
                 rws <- rws[sample(x$table$Freq[i] ,n.tf)]
                 if(i==1) {
-                    plot.data <- cbind(get(nm, envir = .GlobalEnv)[rws, ], cls = rep(j, n.tf))
+                    plot.data <- cbind(.nectr.getData(nm)[rws, ], cls = rep(j, n.tf))
                 } else {
-                    plot.data <- rbind(plot.data, cbind(get(nm, envir = .GlobalEnv)[rws, ], cls = rep(j, n.tf)))
+                    plot.data <- rbind(plot.data, cbind(.nectr.getData(nm)[rws, ], cls = rep(j, n.tf)))
                 }
             }
         } else {
@@ -54,7 +54,7 @@ function(x, ...) {
         if(!(class(i) %in% c("numeric", "integer"))) stop("Second argument must specify cluster numbers")
         
         if (any(!(i %in% x$table$res))) stop(cat("Cluster ",i," does not exist in this object.\n", sep = ""))
-        data <- get(x$dataset, envir = .GlobalEnv)
+        data <- .nectr.getData(x)
         
         require(ggplot2)
         require(reshape2)
