@@ -197,7 +197,7 @@ p(x|\pi, \mu, \Sigma)p(\pi, \mu, \Sigma) &= \left( \prod_{n=1}^N \sum_z \prod_{k
 \ell_{\text{\tiny{MAP}}}(\pi, \mu, \Sigma) & = \sum_{n=1}^N \log\left(\sum_z \pi_k \mathcal{N}(x_n|\mu_k, \Sigma_k)\right) + \left( \sum_{k=1}^K \log\mathcal{N}(\mu_k|m_k, \beta_k^{-1} \Sigma_k)\right.\\
 & \qquad \left. -\frac{\nu_k + d+ 1}{2}\log|\Sigma_k| - \frac{\nu_k}{2}\Trace\left(\Psi_k\Sigma_k^{-1}\right) + (\alpha_k-1)\log\pi_k  \right) + \text{const}
 \end{align*}
-An option has been added to skip evaluations, since in general the extra iterations of EM performed before convergence is diagnosed are computationally less expensive than the likelihood evaluations that have been omitted.
+An option has been added to skip evaluations, since often the extra iterations of EM performed before convergence is diagnosed are computationally less expensive than the likelihood evaluations that have been omitted.
 \begin{thebibliography}{1}
 \bibitem{F02}
 {A. Foss, O.R. Zaiane,

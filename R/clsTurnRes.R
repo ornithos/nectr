@@ -10,20 +10,10 @@ function(data, r, summarise = F, min.size = "Auto", base.cls = "None", phi = 0.8
     #***************************************************
     
     #Catch input errors
-    if(class(data)=="matrix") {
-        if(!(mode(data)=="numeric"|mode(data)=="logical")) {
-            stop("Input data not numeric! \n\n")
-        }
-        message("Converting input data to dataframe..")
-        data <- as.data.frame(data)
-    } else if(class(data)=="data.frame") {
-        for(i in 1:ncol(data)) {
-            if(!(mode(data[,i]) == "numeric" | mode(data[,i]) == "logical")) {
-                stop(paste0("Column ",i," is not numeric! \n\n"))
-            }
-        }
-    } else if(class(data) != "cTurn") {
-        stop("data is not a matrix, dataframe or cTurn object! \n\n")
+    if(class(data) != "cTurn") {
+        check <- .nectr.checkDataset(data)
+        if(!check[1]) stop("data is not a matrix, dataframe or cTurn object! \n\n")
+        if(!check[2]) data <- as.data.frame(data)
     }
     
     n <- ifelse(class(data) == "cTurn", length(data$cluster), nrow(data))

@@ -140,6 +140,7 @@
     out <- list(pi=p, mu=mu, S=S, k=k, d=d, n=n, dsn=params$dsn)
     cls <- .Call("rowWhichMaxC", r)    #[,1] = rowMax, [,2] = which.max
     out$cluster <- data.frame(cluster = cls[ ,2], prob = cls[ ,1])
+    out$noise <- NA
     out$llh_ascent <- llh.history[2:((cI %/% skip.llh)+1), 1]
     out$monotone <- !is.unsorted(out$llh_ascent)
     out$iter <- c(cI, cI %/% skip.llh)
@@ -147,6 +148,7 @@
     if(abs(out$llh_ascent[out$iter[2]] - out$llh_ascent[out$iter[2]-1]) >= eps.stop*skip.llh) 
         warning("EM Algorithm did not converge within max.iter")
     if(!out$monotone) warning("Log Likelihood ascension was not monotone.")
+    out$fit <- TRUE
     class(out) <- ".nectr.GMM"
     return(out)
 }

@@ -37,9 +37,12 @@
         err.msg <- "Object is not of valid GMM parameter type"
         if(!(length(slots) == 7 & length(union(slots, c("pi","mu","S","k","d","n","dsn")))==7)) {
             stop(err.msg, ": (incorrect object structure)")}
+        if(any(x$pi < 0)) stop(err.msg, ": (all elements of pi should be nonnegative)")
         if(sum(x$pi) > 1 + 10^-9 | sum(x$pi) < 1 - 10^-9) stop(err.msg, ": (pi doesn't sum to 1)")
         if(!(length(x$k) == 1 & length(x$d) == 1 & is.numeric(x$k) & is.numeric(x$d))) {
             stop(err.msg, ": (missing num clusters k or dimension d)")}
+        if(!(class(x$mu) %in% c("matrix","data.frame"))) {
+            stop(err.msg, ": (mu must be specified as columnwise ", x$k, " by ", x$d, " matrix.)")}
         if(!all(dim(x$mu) == c(x$k, x$d))) {
             stop(err.msg, ": (mu table is wrong dimensions - expecting ", x$k, " by ", x$d, ".)")}
         if(!(is.list(x$S) & !is.data.frame(x$S) & length(x$S) == x$k)) {
@@ -67,6 +70,30 @@
     } else {
         stop("Object is not of valid GMM parameter type: (incorrect class)")
     }
+}
+
+.nectr.checkDataset <- function(data) {
+    # Check dataset is numeric matrix / dataframe
+    dtype <- TRUE
+    dftype <- TRUE
+    if(class(data)=="matrix") {
+        if(!(mode(data)=="numeric"|mode(data)=="logical")) {
+            stop("Input data not numeric! \n\n")
+        }
+        dftype <- FALSE
+    } else if(class(data)=="data.frame") {
+        for(i in 1:ncol(data)) {
+            if(!(mode(data[,i]) == "numeric" | mode(data[,i]) == "logical")) {
+                stop(paste0("Column ",i," of data is not numeric! \n\n"))
+            }
+        }
+    } else {
+        dtype <- FALSE
+        dftype <- FALSE
+    }
+    # TRUE = data.frame
+    return(c(dtype, dftype))
+
 }
 
 # User-friendly function to generate the hyperparameters. Can be expressed as only 2 literals,
@@ -151,6 +178,7 @@ as.SuffStats <- function(x) {
         if(nm %in% c("pi","mu","S","k","d","n","dsn")) next
         x[nm] <- NULL
     }
+    class(x) <- ".nectr.suffStats"
     return(x)
 }
 

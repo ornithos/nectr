@@ -92,10 +92,10 @@
     for(i in 1:k) {
         rws <- rowWeights[ ,i]
         if(sum(rws)>1) {
-            sub <- dataset * matrix(rws, n, d)
-            mu[i, ] <- colMeans(sub)
-            S[[i]] <- cov(sub)
-            dimnames(S[[i]]) <- NULL
+            # Weighted Statistics
+            stats <- cov.wt(dataset, wt = rws)      # Calculates weighted mean and cov
+            mu[i, ] <- stats$center
+            S[[i]] <- stats$cov
             pi[i] <- sum(rws)
         } else {
             warning(sum(rws), " datapoints associated with component ", i, ". Component skipped.")
@@ -105,6 +105,7 @@
             pi <- pi[-i]
         }
     }
+    pi <- pi/sum(pi)
     
     # TEST IF MEANS ARE TOO CLOSE
     # (impossible to gauge scale if <=2 clusters)
@@ -128,7 +129,6 @@
         }
     }
     
-    pi <- pi/sum(pi)
     out <- list(pi=pi, mu=mu, S=S, k=k, d=d, n=n, dsn=x$dataset)
     class(out) <- ".nectr.suffStats"
     return(out)
