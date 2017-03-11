@@ -1,14 +1,10 @@
----
-layout: post
-title: nectr - Exploratory Clustering
----
 ## nectr - Exploratory Clustering
 
-A number of years ago I spent a while researching density-based clustering algorithms for exploratory analysis. At the time I was looking to find regions of high density within customer attributes, which might inform a wider campaign or strategy. k-means wasn't really appropriate since it isn't looking for concentration of density, instead returning spherical/voronoi clusters which are optimally spread out. Indeed under a uniform distribution, k-means will merrily return an arbitrary partition with no indication of its inappropriateness. In terms of targeting areas of customer concentration, I had to look further afield.
+A number of years ago I spent a while researching density-based clustering algorithms for exploratory analysis. I was looking to find regions of high density within customer attributes, which might inform a wider campaign or strategy. k-means wasn't really appropriate since it isn't directly concerned with concentration of density, instead returning spherical/voronoi clusters which are optimally spread out. Indeed under a uniform distribution, k-means will happily return an arbitrary partition with no indication of its inappropriateness.
 
 Parametric mixture models (most famously Gaussian Mixture Models) are more flexible with cluster shape, and confer various advantages against k-means, but they still assume too much of the generating distribution. My experience of commercial data has not shown much evidence of any parametric distribution that I am familiar with. Various non-parametric alternatives exist such as DBSCAN or mean-shift, but these are highly sensitive to parameter specification, and suffer from quadratic time or worse. Another approach is Spectral Clustering, using the graph Laplacian, but unless approximated is at least quadratic, and one must specify the number of clusters in advance. 
 
-The algorithm I chose is one called TURN-RES from a [paper](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.7.1966&rep=rep1&type=pdf) by Foss \& Zaïane in 2002. It is an approximation of a density search -- more from a compsci perspective than a statistical one -- while being efficient (running in `O(nlogn)` time) and having essentially no parameters. It approximates density estimation by quantizing the space into a discrete grid, and computing the distance to all neighbours in axis-oriented directions. It is therefore less effective for highly correlated distributions. The implementation of the main algorithm -- packaged in R -- is described below, and follows the paper except for a few unclear details for which I have taken my best guess.
+The algorithm I chose is one called TURN-RES from a [paper](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.7.1966&rep=rep1&type=pdf) by Foss \& Zaïane in 2002. It is an approximation of a density search -- more from a compsci perspective than a statistical one -- which runs efficiently (in `O(nlogn)` time) and having essentially no parameters. It approximates density estimation by quantizing the space into a discrete grid, and computing the distance to all neighbours in axis-oriented directions. It is therefore less effective for highly correlated distributions. The implementation of the main algorithm -- packaged in R -- is described below, and follows the paper except for a few unclear details for which I have taken my best guess.
 
 ### TURN-RES
 Two complementary algorithms are proposed in the Foss paper, TurnCut and TURN-RES. I believe TURN is an acronym, but I can't help you out with its meaning. The idea is that TURN-RES is the workhorse clustering algorithm, and TurnCut is its partner for choosing a good parameter. The latter proceeds in sequential manner calling TURN-RES and seeking to find the 'elbow' or 'knee' of various metrics (similar to those used for k-means). The authors justify the 'parameter free' description by use of this second algorithm. However, while the results for the experiments in the paper appear to be pretty good for TurnCut, I have not found it particularly useful in certain real world datasets. This is in part due to the subjectivity inherent in clustering; often a continuum of plausible results can be found for a particular parameter. Also, one often finds that different clusters have different natural resolutions and a global resolution parameter is doomed to failure. 
@@ -17,7 +13,7 @@ This observation motivated a more hands-on approach, whereby instead of an algor
 
 ### Algorithmic overview
 
-We'll quickly explore the algorithm via a poky animation. A window on some 2D data is shown below. The original data is shown in grey.
+We'll quickly explore the algorithm via a little animation. A window of some 2D data is shown below. The original data is shown in grey.
 
 ![dead](/_images/clsTurnRes.gif "steps of TURN-RES")
 
@@ -28,10 +24,10 @@ We'll quickly explore the algorithm via a poky animation. A window on some 2D da
 + The union of all neighbouring interior points and their (exterior) neighbours form a cluster.
 + The data is returned to the original non-quantised space, together with the cluster labels.
 
-The algorithm can be written to execute in `O(dnlogn)` time, by partitioning the data into rows, sorting by column position, and obtaining horizontal neighbours. Vertical neighbours are discovered analogously. For higher dimensions, this process continues sequentially as sorts across each dimension. This may give you an insight into the effect of the curse of dimensionality on the algorithm: clearly this quantised approximation will perform poorly as the number of dimensions increase. It is only really recommended for `d < 10`.
+The algorithm can be written to execute in `O(dnlogn)` time, by partitioning the data into rows, sorting by column position, and obtaining horizontal neighbours. Vertical neighbours are discovered analogously. For higher dimensions, this process continues sequentially as sorts across each dimension. Thus datapoints are neighbours if they are distance 1 away *in at least 1 coordinate direction* with respect to the current quantisation constant. My experience is using only 5-6 dimensions; I haven't explored its performance for medium-large dimensional space.
 
 ## Parsimonious model compression using the GMM
-While the non-parametric ideal is to be admired, there are many situations where it is simply impractical. Even mundane questions such as 'which cluster does my new datapoint belong to?' cannot be answered simply. It is even more difficult to quantify how central or otherwise a point is to its own cluster. For the customer segmentation case we also probably want to assign even outliers to their closest cluster. In order to help in these situations, a Gaussian Mixture Model has been implemented in the same package. It is integrated sufficiently well that the user need not know virtually anything about their construction. Because the exploratory work has already been performed, we know the number of clusters K, and the TURN clusters may be used as priors<sup>1</sup>. By selecting the strength of the prior, one can interpolate between the extremes of a mixture of Gaussians with mean and covariance of the TURN clusters, or simply an initialisation of the GMM from these cluster centers. Derivations of the MAP estimates are available in the repo.
+While the non-parametric ideal is to be admired, there are many attributes that are less desirable. Assigning unseen, test-time data to a cluster is a challenge. It is also by definition difficult to interpret a cluster, since they may be arbitrary shape and span a wide range of different positions in the sample space. For the customer segmentation case we also want to assign outliers with very sparse density to their closest cluster, although it is useful to know that they are unusual. In order to help in these situations, a Gaussian Mixture Model has also been implemented in the package. It is integrated sufficiently well that the user need not know virtually anything about their construction. Because the exploratory work has already been performed, we have chosen the number of clusters K, and the TURN clusters may be used as priors<sup>1</sup>. By selecting the strength of the prior, one can interpolate between the extremes of a mixture of Gaussians with the moments of the TURN clusters, or simply an initialisation of the GMM from these cluster centers. Derivations of the MAP estimates are available in the repo.
 
 <br>
 --------------------------
@@ -39,7 +35,7 @@ While the non-parametric ideal is to be admired, there are many situations where
 
 These functions are bundled together in the R-package `nectr` and can be found [here](https://github.com/spoonbill/nectr). The following is a simple demonstration of the algorithm on some dummy data. First, let's create some:
 
-## Create a 5 cluster fake dataset over 3 dimensions:
+## Create a 5 cluster synthetic dataset in 3 dimensions:
 
 ```R
 library(MASS)
@@ -117,8 +113,8 @@ modelTurnRes <- clsTurnRes(data, r= ...)
 where the resolution is specified by `r=...`. Good values may be estimated given those already used in the printout from `clsMres(...)`. Sometimes we may wish to stop here.
 
 
-## Creating the summary GMM model
-As discussed earlier, we wish to approximate the discovered distribution with a Gaussian Mixture Model centered at certain clusters. The function `clsSpecifyModel` takes as arguments the multiresolution object created by `clsMRes(...)`, the cluster numbers which we wish to keep in the GMM model (again these do not have to be from the same resolution level), and a guess at the percentage of noise. The output of `clsMres(...)` may help with this. The GMM will use the specified clusters as priors, and if a `noise.pct` is specified, an additional large variance noise cluster is admitted into the GMM to prevent outliers skewing the results<sup>2</sup>.
+### Creating the summary GMM model
+Now if a parametric form of this exploratory phase is required, we can pass the output to a Gaussian Mixture Model, centered at the clusters discovered using TURN. The function `clsSpecifyModel` takes as arguments the multiresolution object created by `clsMRes(...)`, the cluster numbers which we wish to keep in the GMM model (again these do not have to be from the same resolution level), and a guess at the percentage of noise. The output of `clsMres(...)` may help with this. The GMM will use the specified clusters as priors, and if a `noise.pct` is specified, an additional large variance noise cluster is admitted into the GMM to prevent outliers skewing the results<sup>2</sup>.
 
 ```R
 gmmSpec <- clsSpecifyModel(multires, clusters = c(6,7,8,9,10), noise.pct = 0.1)
@@ -134,11 +130,11 @@ The model is fitted by standard EM, which in this example took about 25 seconds 
 
 <br>
 ##### Footnotes:
-<sup>1</sup> the GMM uses the MAP not MLE estimate.
+<sup>1</sup> the GMM uses the MAP not MLE estimate. This also avoids the collapsing covariance issue common to MLE.
 
 <sup>2</sup> Gaussian distributions are notoriously sensitive to outliers, due to the double exponential decay of the density.
 
-
+---------------------------------------------------------------------------------------
 ### Original README notes for R package
 
 This is an R package intended for exploratory analysis of large N, small D datasets such as are typically used by industry analysts. It is based around an implementation of the non-parametric clustering method authored by Foss, 2002 (TURN-RES). The benefits are that no structure is assumed a priori and that the algorithm asymptotically scales linearithmically in N and D. Because we must perform a search on the tuning parameter, we can build a picture of how clusters merge, or are agglomerated as the resolution is decreased. This can then be used to inform a final more parsimonious clustering or dimensionality reducing technique.
